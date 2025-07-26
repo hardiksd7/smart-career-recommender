@@ -1,77 +1,53 @@
 import streamlit as st
-import os
-import re
-import pickle
 from PyPDF2 import PdfReader
+import pickle
+import pandas as pd
 
-# Load ML model and vectorizer
-model = pickle.load(open("app/model.pkl", "rb"))
-vectorizer = pickle.load(open("app/vectorizer.pkl", "rb"))
+# Set page config
+st.set_page_config(
+    page_title="Smart Career Path Recommender",
+    page_icon="🧠",
+    layout="centered",
+)
 
-# Skill list
-SKILL_SET = [
-    "python", "java", "c++", "machine learning", "deep learning", "nlp", "sql", "mongodb",
-    "cassandra", "linux", "aws", "azure", "cloud", "flask", "django", "excel", "tableau",
-    "power bi", "hadoop", "spark", "git", "github", "r", "matplotlib", "seaborn", "numpy",
-    "pandas", "data analysis", "data visualization", "opencv", "html", "css", "javascript",
-    "react", "kafka", "airflow", "statistics", "probability", "data cleaning"
-]
-
-# Page setup
-st.set_page_config(page_title="Smart Career Recommender", layout="wide")
-
-# Header
-st.markdown("<h1 style='color:navy;'>🚀 Smart Career Recommender</h1>", unsafe_allow_html=True)
-st.markdown("Upload your resume and get a **predicted career path** using Machine Learning.")
-
-# Sidebar
-st.sidebar.title("About")
-st.sidebar.info("""
-This is a B.Tech CSE Final Year Project built by **Hardik Sharma**.
-- Resume Parsing
-- Skill Extraction
-- ML-based Career Prediction
-- Deployable Streamlit App
-""")
-
-# Upload PDF
-uploaded_file = st.file_uploader("📄 Upload your resume (PDF only)", type=["pdf"])
-
-if uploaded_file:
-    # Save and read PDF
-    with open("temp_resume.pdf", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
-    pdf_reader = PdfReader("temp_resume.pdf")
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
-
-    # Extract email
-    email_match = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
-    email = email_match[0] if email_match else "Not found"
-
-    # Skill extraction
-    extracted_skills = [skill for skill in SKILL_SET if skill in text.lower()]
-    
-    # Vectorize & predict
-    vector = vectorizer.transform([" ".join(extracted_skills)])
-    prediction = model.predict(vector)[0]
-
-    # Display
-    st.success("✅ Resume processed successfully!")
-
-    st.markdown(f"### 📧 Email: `{email}`")
-    st.markdown("### 🛠️ Extracted Skills:")
-    st.markdown(", ".join(f"`{skill}`" for skill in extracted_skills))
-
-    st.markdown(f"### 🎯 **Recommended Career Path:**")
-    st.markdown(f"<h2 style='color:green;'>{prediction}</h2>", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown("💡 *Built using Python, Streamlit, ML & NLP.*")
-
-# Footer
+# Title and instructions
+st.markdown("<h1 style='text-align: center; color: #6C63FF;'>Smart Career Path Recommender</h1>", unsafe_allow_html=True)
+st.markdown("### 📝 Upload your Resume in PDF format to get personalized career suggestions based on your skills.")
 st.markdown("---")
-st.markdown("Made with ❤️ by Hardik Sharma | [GitHub](https://github.com/hardiksd7)")
 
+# Load model and vectorizer
+with open("app/model.pkl", "rb") as model_file:
+    model = pickle.load(model_file)
+
+with open("app/vectorizer.pkl", "rb") as vectorizer_file:
+    vectorizer = pickle.load(vectorizer_file)
+
+# Resume upload
+uploaded_file = st.file_uploader("📄 Choose your resume (PDF only):", type=["pdf"])
+
+if uploaded_file is not None:
+    st.success("✅ Resume uploaded successfully!")
+
+    # Read and extract text from PDF
+    pdf_reader = PdfReader(uploaded_file)
+    resume_text = ""
+    for page in pdf_reader.pages:
+        resume_text += page.extract_text()
+
+    # Show extracted text (optional)
+    with st.expander("📑 Show extracted resume text"):
+        st.write(resume_text)
+
+    # Predict button
+    if st.button("🔍 Predict Career Path"):
+        # Transform the text
+        input_vector = vectorizer.transform([resume_text])
+
+        # Make prediction
+        prediction = model.predict(input_vector)[0]
+
+        # Display result
+        st.markdown(f"### 🎯 Recommended Career Path: **{prediction}**")
+
+        # Additional message
+        st.info("This recommendation is based on your resume content and the model's training data. Make sure your resume includes all your key skills and experiences.")
