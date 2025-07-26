@@ -5,8 +5,8 @@ import pickle
 from PyPDF2 import PdfReader
 
 # Load ML model and vectorizer
-model = pickle.load(open("model.pkl", "rb"))
-vectorizer = pickle.load(open("vectorizer.pkl", "rb"))
+model = pickle.load(open("app/model.pkl", "rb"))
+vectorizer = pickle.load(open("app/vectorizer.pkl", "rb"))
 
 # Skill list
 SKILL_SET = [
